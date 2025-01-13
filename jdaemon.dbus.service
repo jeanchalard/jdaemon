@@ -1,0 +1,7 @@
+# Service file for the DBus configuration of JDaemon. This file must be linked into
+# ~/.local/share/dbus-1/services.
+# See also jdaemon.service.
+[D-BUS Service]
+Name=org.j.Daemon
+Exec=%h/proj/jdaemon/jdaemon/target/debug/jdaemon
+SystemdService=jdaemon.service

@@ -1,0 +1,38 @@
+# J daemon to do J stuff. This must be linked in ~/.config/systemd/user.
+# The daemon exposes a dbus interface.
+#  Service = org.j.Daemon
+# The daemon has the following functionalities :
+# • Manage PowerManagement Inhibit. This is necessary because the
+#   dbus command org.freedesktop.PowerManagement.Inhibit will record
+#   the process calling it and drop the wakelock as soon as that process
+#   terminate, making it unusable with qdbus and requiring a long-living
+#   daemon. J daemon implements the same Inhibit and Uninhibit commands
+#   but without this limitation, and exposes a property to read the current
+#   state (though it only knows about its own state, not if anyone else
+#   holds a wakelock).
+
+[Unit]
+Description=JDaemon
+
+# BindsTo+After says that this service requires the listed service, but
+# will not automatically start it if it's not ; also it will go down if the
+# listed service goes down. This is how you declare a strict, standing
+# dependency ("Requires" will start this even if the target fails to
+# start, and "Requisite" will not stop this if the target stops)
+BindsTo=dbus.service
+After=dbus.service
+#Documentation=man:jdaemon(1)
+
+[Service]
+ExecStart=%h/proj/jdaemon/jdaemon/target/debug/jdaemon
+Type=dbus
+BusName=org.j.Daemon
+ExitType=main
+ExecReload=busctl call org.j.Daemon /org/j/Daemon ReloadConfig
+SuccessExitStatus=3 4
+RestartForceExitStatus=3 4
+
+# Hardening
+SystemCallArchitectures=native
+MemoryDenyWriteExecute=true
+NoNewPrivileges=true

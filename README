@@ -1,0 +1,40 @@
+This project contains the jdaemon, which implements the
+system services that J wants to run continuously.
+
+At the time of this writing, this implements :
+• Screensaver inhibiting service.
+  There is an existing system service for this purpose
+  under the org.freedesktop.ScreenSaver dbus service and
+  in fact this daemon uses it. But this service tracks
+  the processes inhibiting the screensaver and drops
+  their lock when they terminate (which makes sense),
+  meaning the process must stay running if the screen
+  saver is to stay inhibited. That means you can't just
+  just run a qdbus command to inhibit the screensaver
+  because as soon as qdbus terminates the lock is
+  released.
+  So jdaemon supplies the long-running process. It
+  exposes a ScreenSaver service under org.j.Daemon
+  which mimics org.freedesktop.ScreenSaver, with the
+  addition of a status and a toggle commands. Of course
+  that means the lock held by jdaemon is cooperative,
+  which would not be fine for the standard system
+  service, but is fine for my own uses.
+  With this, a simple qdbus command can be used to
+  inhibit, uninhibit, or toggle the screensaver. It
+  works conjointly with other locks (as in, if some
+  other party is holding a lock, giving jdaemon the
+  uninhibit command will not release it and the
+  screensaver stays inhibited until the other party
+  releases it, which is what we want).
+  To use this service, the most obvious thing to do is
+  to bind a key to
+  qdbus org.j.Daemon /org/j/Daemon/ScreenSaver org.j.Daemon.ScreenSaver.ToggleInhibit
+  ...or a script doing that. The command conveniently
+  returns the current status after it ran, as a string,
+  to display to the user.
+  
+This is meant to be a container to possibly implement
+other services in the future. One option could be the
+regular screenshotting service.
+
